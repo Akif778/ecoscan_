@@ -5,7 +5,6 @@ const app = express();
 app.use(express.json({ limit: '20mb' }));
 app.use(express.static(path.join(__dirname)));
 
-// API proxy - OpenRouter'a gönderir
 async function chatHandler(req, res) {
   try {
     const apiKey = process.env.OPENROUTER_API_KEY;
@@ -25,6 +24,7 @@ async function chatHandler(req, res) {
 }
 
 app.post('/api/chat', chatHandler);
-app.post('/chat', chatHandler); // eski uyumluluk için
+app.post('/chat', chatHandler);
 
-app.listen(3000, () => console.log('EcoScan çalışıyor → http://localhost:3000/login.html'));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`EcoScan çalışıyor → http://localhost:${PORT}/login.html`));
