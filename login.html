@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EcoScan – Giriş Yap</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --green: #1D9E75;
+    --green-dark: #0F6E56;
+    --green-light: #E1F5EE;
+    --bg: #0b1220;
+    --card: #0f1a2b;
+    --text: #e5e7eb;
+    --text-muted: #9ca3af;
+    --border: rgba(255,255,255,0.14);
+    --radius: 14px;
+  }
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  /* Arkaplan animasyonu */
+  .bg-blobs { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+  .blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.18; animation: drift 12s ease-in-out infinite alternate; }
+  .blob1 { width: 500px; height: 500px; background: #1D9E75; top: -100px; left: -100px; animation-delay: 0s; }
+  .blob2 { width: 400px; height: 400px; background: #0b6e9e; bottom: -100px; right: -60px; animation-delay: 3s; }
+  .blob3 { width: 300px; height: 300px; background: #1D9E75; top: 40%; right: 20%; animation-delay: 6s; }
+  @keyframes drift { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(30px, 20px) scale(1.06); } }
+
+  .login-wrap { position: relative; z-index: 1; width: 100%; max-width: 420px; }
+
+  .logo-row { display: flex; align-items: center; gap: 12px; justify-content: center; margin-bottom: 2rem; }
+  .logo-icon { width: 48px; height: 48px; background: var(--green); border-radius: 14px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .logo-icon img { width: 62px; height: 62px; object-fit: contain; }
+  .logo-text { font-size: 28px; font-weight: 700; color: var(--text); }
+
+  .card {
+    background: rgba(15,26,43,0.85);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+
+  .card h2 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .card p { color: var(--text-muted); font-size: 14px; margin-bottom: 2rem; }
+
+  .oauth-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 18px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.05);
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+    margin-bottom: 12px;
+  }
+  .oauth-btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.3); transform: translateY(-1px); }
+  .oauth-btn:active { transform: translateY(0); }
+  .oauth-btn svg { flex-shrink: 0; }
+
+  .divider { display: flex; align-items: center; gap: 10px; margin: 1.5rem 0; color: var(--text-muted); font-size: 13px; }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .input-group { margin-bottom: 14px; }
+  .input-group label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; }
+  .input-group input {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.06);
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .input-group input:focus { border-color: var(--green); }
+  .input-group input::placeholder { color: var(--text-muted); }
+
+  .btn-primary {
+    width: 100%;
+    padding: 13px;
+    background: var(--green);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+    margin-top: 4px;
+  }
+  .btn-primary:hover { background: var(--green-dark); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .toggle-mode { text-align: center; margin-top: 1.2rem; font-size: 13px; color: var(--text-muted); }
+  .toggle-mode a { color: var(--green); text-decoration: none; cursor: pointer; font-weight: 500; }
+  .toggle-mode a:hover { text-decoration: underline; }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: #1a2e20; color: #d1fae5; padding: 12px 20px; border-radius: 10px;
+    font-size: 14px; z-index: 100; opacity: 0; transition: opacity 0.3s;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4); white-space: nowrap;
+  }
+  .toast.show { opacity: 1; }
+  .toast.error { background: #2e1a1a; color: #fca5a5; }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="bg-blobs">
+  <div class="blob blob1"></div>
+  <div class="blob blob2"></div>
+  <div class="blob blob3"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="login-wrap">
+  <div class="logo-row">
+    <div class="logo-icon"><img src="logo.PNG" alt="EcoScan"></div>
+    <span class="logo-text">EcoScan</span>
+  </div>
+
+  <div class="card">
+    <h2 id="card-title">Hoş geldin 👋</h2>
+    <p id="card-sub">Geri dönüşüm puanlarını takip etmek için giriş yap</p>
+
+    <!-- OAuth -->
+    <button class="oauth-btn" onclick="loginWith('google')">
+      <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#EA4335" d="M5.266 9.765A7.077 7.077 0 0 1 12 4.909c1.69 0 3.218.6 4.418 1.582L19.91 3C17.782 1.145 15.055 0 12 0 7.27 0 3.198 2.698 1.24 6.65l4.026 3.115Z"/><path fill="#34A853" d="M16.04 18.013c-1.09.703-2.474 1.078-4.04 1.078a7.077 7.077 0 0 1-6.723-4.823l-4.04 3.067A11.965 11.965 0 0 0 12 24c2.933 0 5.735-1.043 7.834-3l-3.793-2.987Z"/><path fill="#4A90E2" d="M19.834 21c2.195-2.048 3.62-5.096 3.62-9 0-.71-.109-1.473-.272-2.182H12v4.637h6.436c-.317 1.559-1.17 2.766-2.395 3.558L19.834 21Z"/><path fill="#FBBC05" d="M5.277 14.268A7.12 7.12 0 0 1 4.909 12c0-.782.125-1.533.357-2.235L1.24 6.65A11.934 11.934 0 0 0 0 12c0 1.92.445 3.73 1.237 5.335l4.04-3.067Z"/></svg>
+      Google ile devam et
+    </button>
+
+    <button class="oauth-btn" onclick="loginWith('github')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
+      GitHub ile devam et
+    </button>
+
+    <div class="divider">veya e-posta ile</div>
+
+    <!-- Register form (default hidden) -->
+    <div id="register-extra" class="hidden">
+      <div class="input-group">
+        <label>Kullanıcı adı</label>
+        <input type="text" id="reg-username" placeholder="ecoscan_user">
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>E-posta</label>
+      <input type="email" id="email-input" placeholder="sen@ornek.com">
+    </div>
+    <div class="input-group">
+      <label>Şifre</label>
+      <input type="password" id="pass-input" placeholder="••••••••" onkeydown="if(event.key==='Enter')submitEmail()">
+    </div>
+
+    <button class="btn-primary" id="email-btn" onclick="submitEmail()">
+      <span id="email-btn-text">Giriş Yap</span>
+    </button>
+
+    <div class="toggle-mode">
+      <span id="toggle-text">Hesabın yok mu?</span>
+      <a onclick="toggleMode()" id="toggle-link">Kayıt ol</a>
+    </div>
+  </div>
+</div>
+
+<script>
+
+const SUPABASE_URL = 'https://zmsrufuinqpiyieqcclz.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_QdXQ66K7M0ZpMQLuangb7g_9RIqkXkk';
+
+
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let isRegister = false;
+
+// Oturum bilgisini EcoScan index.html'in anlayacağı şekilde kaydet
+function saveEcoScanUser(user) {
+  localStorage.setItem('ecoscanUser', JSON.stringify({
+    uid: user.id,
+    name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'EcoScan Kullanıcısı',
+    email: user.email,
+    photoURL: user.user_metadata?.avatar_url || null,
+    provider: user.app_metadata?.provider || 'email'
+  }));
+}
+
+// Zaten giriş yaptıysa ana sayfaya yönlendir
+sb.auth.getSession().then(async ({ data }) => {
+  if (data.session?.user) {
+    await ensureProfile(data.session.user);
+    saveEcoScanUser(data.session.user);
+    window.location.href = 'index.html';
+  }
+});
+
+// OAuth callback'ini yakala
+sb.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_IN' && session?.user) {
+    ensureProfile(session.user).then(() => {
+      saveEcoScanUser(session.user);
+      window.location.href = 'index.html';
+    });
+  }
+});
+
+async function ensureProfile(user) {
+  const { data } = await sb.from('profiles').select('id').eq('id', user.id).single();
+  if (!data) {
+    const username = user.user_metadata?.user_name || user.email?.split('@')[0] || 'kullanici';
+    await sb.from('profiles').insert({
+      id: user.id,
+      username,
+      email: user.email,
+      points: 0,
+      total_scans: 0
+    });
+  }
+}
+
+async function loginWith(provider) {
+  const redirectUrl = window.location.origin + window.location.pathname;
+
+  const { error } = await sb.auth.signInWithOAuth({
+    provider,
+    options: { redirectTo: redirectUrl }
+  });
+
+  if (error) showToast(error.message, true);
+}
+
+async function submitEmail() {
+  const email = document.getElementById('email-input').value.trim();
+  const pass = document.getElementById('pass-input').value;
+  const btn = document.getElementById('email-btn');
+
+  if (!email || !pass) return showToast('E-posta ve şifreyi gir', true);
+  btn.disabled = true;
+
+  if (isRegister) {
+    const username = document.getElementById('reg-username').value.trim() || email.split('@')[0];
+    const { data, error } = await sb.auth.signUp({ email, password: pass });
+    if (error) { showToast(error.message, true); btn.disabled = false; return; }
+    if (data.user) {
+      await sb.from('profiles').insert({
+        id: data.user.id,
+        username,
+        email,
+        points: 0,
+        total_scans: 0
+      });
+    }
+    showToast('Kayıt başarılı! E-postanı kontrol et ✓');
+  } else {
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if (error) { showToast('Hatalı e-posta veya şifre', true); btn.disabled = false; return; }
+    if (data.user) {
+      await ensureProfile(data.user);
+      saveEcoScanUser(data.user);
+      window.location.href = 'index.html';
+    }
+  }
+  btn.disabled = false;
+}
+
+function toggleMode() {
+  isRegister = !isRegister;
+  document.getElementById('card-title').textContent = isRegister ? 'Hesap oluştur 🌱' : 'Hoş geldin 👋';
+  document.getElementById('card-sub').textContent = isRegister ? 'EcoScan topluluğuna katıl' : 'Geri dönüşüm puanlarını takip etmek için giriş yap';
+  document.getElementById('email-btn-text').textContent = isRegister ? 'Kayıt Ol' : 'Giriş Yap';
+  document.getElementById('toggle-text').textContent = isRegister ? 'Zaten hesabın var mı?' : 'Hesabın yok mu?';
+  document.getElementById('toggle-link').textContent = isRegister ? 'Giriş yap' : 'Kayıt ol';
+  document.getElementById('register-extra').classList.toggle('hidden', !isRegister);
+}
+
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
