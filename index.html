@@ -219,7 +219,7 @@
   </div>
 </header>
 
-<!-- LEADERBOARD MODAL -->
+<!-- sıralama MODAL -->
 <div class="modal-overlay hidden" id="lb-modal">
   <div class="modal">
     <div class="modal-header">
@@ -230,7 +230,7 @@
   </div>
 </div>
 
-<!-- PROFILE MODAL -->
+<!--  profil MODAL -->
 <div class="modal-overlay hidden" id="profile-modal">
   <div class="modal">
     <div class="modal-header">
@@ -241,7 +241,7 @@
   </div>
 </div>
 
-<!-- MAIN -->
+<!-- ana -->
 <div class="container">
 
   <div class="steps" id="steps">
@@ -254,7 +254,7 @@
     <div class="step" id="s4"><div class="step-dot">4</div><span>Kanıt & Puan</span></div>
   </div>
 
-  <!-- STEP 1: UPLOAD -->
+  <!-- foto yukleme -->
   <div class="card" id="panel-upload">
     <div class="card-title"><i class="ti ti-photo"></i> Geri dönüştüreceğin nesnenin fotoğrafını yükle</div>
     <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
@@ -271,7 +271,7 @@
     </div>
   </div>
 
-  <!-- STEP 2: RESULT -->
+  <!-- sonuç-->
   <div class="card hidden" id="panel-result">
     <div class="card-title"><i class="ti ti-analyze"></i> Analiz sonucu</div>
     <div id="loading-section">
@@ -290,7 +290,7 @@
         </div>
       </div>
 
-      <!-- GERİ DÖNÜŞTÜRÜLEBİLİR: metrikler -->
+      <!-- geri donuşturme metriği -->
       <div id="recyclable-section">
         <div class="info-box" style="margin-bottom:1rem">
           <div class="info-label" style="margin-bottom:8px">Geri dönüştürürsen kurtarırsın</div>
@@ -301,7 +301,7 @@
         </div>
       </div>
 
-      <!-- GERİ DÖNÜŞTÜRÜLEMEYEN: açıklama + öneri -->
+      <!-- Geridonuşturulemiyen açıklama oneri -->
       <div id="nonrecyclable-section" class="hidden">
         <!-- Neden geri dönüştürülemiyor? -->
         <div class="info-box" style="margin-bottom:0.8rem;cursor:pointer;border:1px solid rgba(251,191,36,0.3);background:rgba(251,191,36,0.06);" onclick="toggleWhySection()">
@@ -334,7 +334,7 @@
     </div>
   </div>
 
-  <!-- STEP 3: CHAT -->
+  <!-- chatbot -->
   <div class="card hidden" id="panel-chat">
     <div class="card-title"><i class="ti ti-robot"></i> Geri dönüşüm danışmanı</div>
     <div class="chat-messages" id="chat-messages"></div>
@@ -353,7 +353,7 @@
     </div>
   </div>
 
-  <!-- STEP 4: PROOF + POINTS -->
+  <!-- kanıt fotosu -->
   <div class="card hidden" id="panel-proof">
     <div class="card-title"><i class="ti ti-camera-check"></i> Geri dönüşüm kanıtı yükle</div>
     <p style="font-size:13px;color:var(--text-muted);margin-bottom:1rem;">Ürünü geri dönüşüm kutusuna attığının veya yetkili noktaya bıraktığının fotoğrafını çek ve yükle. AI doğrulayacak ve puanın yatacak!</p>
@@ -375,7 +375,7 @@
     </div>
   </div>
 
-  <!-- STEP 4 SUCCESS: POINTS EARNED -->
+  <!-- kazanılan puan -->
   <div class="card hidden" id="panel-points">
     <div class="points-card">
       <div class="points-emoji" id="points-emoji">🎉</div>
@@ -404,13 +404,13 @@
 </div><!-- /container -->
 
 <script>
-// ==================== CONFIG ====================
+// Database bağlantı
 const SUPABASE_URL = 'https://zmsrufuinqpiyieqcclz.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_QdXQ66K7M0ZpMQLuangb7g_9RIqkXkk';
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ==================== RANK SYSTEM ====================
+// Rank sistemi
 const RANKS = [
   { name: 'Tohum',          emoji: '🌱', min: 0,    max: 49   },
   { name: 'Fidan',          emoji: '🌿', min: 50,   max: 149  },
@@ -434,7 +434,7 @@ function getNextRank(pts) {
   return RANKS.find(r => r.min > pts) || null;
 }
 
-// ==================== ECO DATA ====================
+//eco tablo
 const ekoVeriler = {
   'Plastik':    { co2: 70,   co2Tip: 'Bu plastik geri dönüştürülürse 600 m araba yolculuğu kadar CO₂ atmosfere salınmaktan kurtulur.',     su: 2,    suTip: 'Bu nesneyi geri dönüştürürsen 8 bardak içme suyu kurtarırsın.',       enerji: 15,   enerjiTip: 'Bu plastik geri dönüştürülürse 1 tam telefon şarjı kadar enerji tasarruf edilir.' },
   'Cam':        { co2: 300,  co2Tip: 'Bu camı geri dönüştürürsen 2,5 km araba yolculuğu kadar CO₂ emisyonunu önlemiş olursun.',            su: 5,    suTip: 'Bu nesneyi geri dönüştürürsen 20 bardak içme suyu kurtarırsın.',      enerji: 200,  enerjiTip: 'Bu camı geri dönüştürürsen 4 saat laptop kullanımı kadar enerji tasarruf edilir.' },
@@ -446,7 +446,7 @@ const ekoVeriler = {
   'Diğer':      { co2: 50,   co2Tip: 'Bu nesneyi geri dönüştürürsen 400 m araba yolculuğu kadar CO₂ atmosfere salınmaktan kurtulur.',      su: 2,    suTip: 'Bu nesneyi geri dönüştürürsen 8 bardak içme suyu kurtarırsın.',        enerji: 20,   enerjiTip: 'Bu nesneyi geri dönüştürürsen 1 tam telefon şarjı kadar enerji tasarruf edilir.' }
 };
 
-// ==================== STATE ====================
+// durum
 let currentUser = null;
 let currentProfile = null;
 let uploadedImageBase64 = null;
@@ -459,7 +459,7 @@ let chatHistory = [];
 let whyLoaded = false;
 let altLoaded = false;
 
-// ==================== INIT ====================
+// init
 async function init() {
   const { data } = await sb.auth.getSession();
   if (!data.session?.user) { window.location.href = 'login.html'; return; }
@@ -505,7 +505,7 @@ function updateHeaderUI() {
 document.getElementById('header-name').textContent = displayName;
 }
 
-// ==================== STEP 1: IMAGE UPLOAD ====================
+//foto yukleme
 document.getElementById('file-input').addEventListener('change', e => {
   const f = e.target.files[0]; if (!f) return; loadImage(f);
 });
@@ -527,7 +527,7 @@ function loadImage(file) {
   r.readAsDataURL(file);
 }
 
-// ==================== STEP 2: ANALYZE ====================
+// analiz
 async function analyzeImage() {
   if (!uploadedImageBase64) return;
   const btn = document.getElementById('analyze-btn'); btn.disabled = true;
@@ -588,8 +588,7 @@ async function analyzeImage() {
   }
 }
 
-// ==================== NEDEN GERİ DÖNÜŞTÜRÜLEMİYOR ====================
-let whyLoaded = false;
+// Neden geri donuşturulemiyor kısmı
 async function toggleWhySection() {
   const section = document.getElementById('why-section');
   const chevron = document.getElementById('why-chevron');
@@ -615,8 +614,7 @@ async function toggleWhySection() {
   }
 }
 
-// ==================== YİNE DE NE YAPABİLİRİM ====================
-let altLoaded = false;
+// Yinede ne yapabilirsin
 async function toggleAlternativeSection() {
   const section = document.getElementById('alt-section');
   const chevron = document.getElementById('alt-chevron');
@@ -795,7 +793,7 @@ function showPointsPanel(earned, total) {
   }
 }
 
-// ==================== LEADERBOARD ====================
+// ==================== sıralama ====================
 async function openLeaderboard() {
   document.getElementById('lb-modal').classList.remove('hidden');
   const body = document.getElementById('lb-body');
