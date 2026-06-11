@@ -175,9 +175,24 @@
   .hidden { display: none !important; }
   .spin { animation: spin 1s linear infinite; display: inline-block; }
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* TOOLTIP */
+  .tooltip-box {
+    display: none; position: fixed; z-index: 999;
+    background: #1a2e20; color: #d1fae5; font-size: 13px;
+    line-height: 1.55; padding: 10px 14px; border-radius: 10px;
+    max-width: 240px; box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    pointer-events: none;
+  }
+  .tooltip-box.visible { display: block; }
+  .metric { cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; }
+  .metric:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(29,158,117,0.2); }
+  .metric-hint { font-size: 11px; color: var(--green); margin-top: 4px; opacity: 0.8; }
 </style>
 </head>
 <body>
+
+<div class="tooltip-box" id="tooltip-box"></div>
 
 <!-- BG VIDEOS -->
 <div class="bg-video-wrap">
@@ -386,14 +401,14 @@ function getNextRank(pts) {
 
 // ==================== ECO DATA ====================
 const ekoVeriler = {
-  'Plastik':    { co2: 70,   su: 2,    enerji: 15   },
-  'Cam':        { co2: 300,  su: 5,    enerji: 200  },
-  'Metal':      { co2: 900,  su: 40,   enerji: 350  },
-  'Kağit':      { co2: 50,   su: 10,   enerji: 17   },
-  'Organik':    { co2: 30,   su: 1,    enerji: 5    },
-  'Elektronik': { co2: 4000, su: 100,  enerji: 2000 },
-  'Tekstil':    { co2: 3500, su: 2700, enerji: 500  },
-  'Diğer':      { co2: 50,   su: 2,    enerji: 20   }
+  'Plastik':    { co2: 70,   co2Tip: 'Bu plastik geri dönüştürülürse 600 m araba yolculuğu kadar CO₂ atmosfere salınmaktan kurtulur.',     su: 2,    suTip: 'Bu nesneyi geri dönüştürürsen 8 bardak içme suyu kurtarırsın.',       enerji: 15,   enerjiTip: 'Bu plastik geri dönüştürülürse 1 tam telefon şarjı kadar enerji tasarruf edilir.' },
+  'Cam':        { co2: 300,  co2Tip: 'Bu camı geri dönüştürürsen 2,5 km araba yolculuğu kadar CO₂ emisyonunu önlemiş olursun.',            su: 5,    suTip: 'Bu nesneyi geri dönüştürürsen 20 bardak içme suyu kurtarırsın.',      enerji: 200,  enerjiTip: 'Bu camı geri dönüştürürsen 4 saat laptop kullanımı kadar enerji tasarruf edilir.' },
+  'Metal':      { co2: 900,  co2Tip: 'Bu metali geri dönüştürürsen 7,5 km araba yolculuğu kadar CO₂ salınımını önlemiş olursun.',          su: 40,   suTip: 'Bu nesneyi geri dönüştürürsen 1 kısa duşluk su kurtarırsın.',        enerji: 350,  enerjiTip: 'Bu metali geri dönüştürürsen 7 saat TV izleme kadar enerji tasarruf edilir.' },
+  'Kağit':      { co2: 50,   co2Tip: 'Bu kağıdı geri dönüştürürsen 400 m araba yolculuğu kadar CO₂ atmosfere salınmaktan kurtulur.',       su: 10,   suTip: 'Bu nesneyi geri dönüştürürsen 40 bardak içme suyu kurtarırsın.',      enerji: 17,   enerjiTip: 'Bu kağıdı geri dönüştürürsen 1 tam telefon şarjı kadar enerji tasarruf edilir.' },
+  'Organik':    { co2: 30,   co2Tip: 'Bu organik atığı kompostlarsan 250 m araba yolculuğu kadar CO₂ emisyonunu azaltmış olursun.',        su: 1,    suTip: 'Bu nesneyi kompostlarsan 4 bardak içme suyu kurtarırsın.',            enerji: 5,    enerjiTip: 'Bu organik atığı kompostlarsan telefonunun yaklaşık üçte biri kadar şarj enerjisi tasarruf edilir.' },
+  'Elektronik': { co2: 4000, co2Tip: 'Bu elektroniği geri dönüştürürsen 33 km araba yolculuğu kadar CO₂ salınımını önlemiş olursun.',      su: 100,  suTip: 'Bu nesneyi geri dönüştürürsen yaklaşık 2 kısa duşluk su kurtarırsın.', enerji: 2000, enerjiTip: 'Bu elektroniği geri dönüştürürsen 40 saat TV izleme kadar enerji tasarruf edilir.' },
+  'Tekstil':    { co2: 3500, co2Tip: 'Bu tekstili geri dönüştürürsen 29 km araba yolculuğu kadar CO₂ salınımını önlemiş olursun.',         su: 2700, suTip: 'Bu nesneyi geri dönüştürürsen 41 kısa duşluk su kurtarırsın.',       enerji: 500,  enerjiTip: 'Bu tekstili geri dönüştürürsen 10 saat laptop kullanımı kadar enerji tasarruf edilir.' },
+  'Diğer':      { co2: 50,   co2Tip: 'Bu nesneyi geri dönüştürürsen 400 m araba yolculuğu kadar CO₂ atmosfere salınmaktan kurtulur.',      su: 2,    suTip: 'Bu nesneyi geri dönüştürürsen 8 bardak içme suyu kurtarırsın.',        enerji: 20,   enerjiTip: 'Bu nesneyi geri dönüştürürsen 1 tam telefon şarjı kadar enerji tasarruf edilir.' }
 };
 
 // ==================== STATE ====================
@@ -443,9 +458,9 @@ function updateHeaderUI() {
   document.getElementById('header-points-label').textContent = pts + ' puan';
   // avatar
   const avatarEl = document.getElementById('header-avatar');
-  const photo = currentUser.user_metadata?.avatar_url;
+  const photo = currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture;
   if (photo) {
-    avatarEl.innerHTML = `<img src="${photo}" alt="">`;
+    avatarEl.innerHTML = `<img src="${photo}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
   } else {
     avatarEl.textContent = (currentProfile.username || '?')[0].toUpperCase();
   }
@@ -509,9 +524,15 @@ async function analyzeImage() {
     document.getElementById('res-badge').innerHTML=`<span class="badge ${bc}">${bt}</span>`;
     const v = ekoVeriler[result.kategori]||ekoVeriler['Diğer'];
     document.getElementById('metric-grid').innerHTML=`
-      <div class="metric"><div class="metric-val">${v.co2}g</div><div class="metric-lbl">CO₂ tasarrufu</div></div>
-      <div class="metric"><div class="metric-val">${v.su}L</div><div class="metric-lbl">Su tasarrufu</div></div>
-      <div class="metric"><div class="metric-val">${v.enerji}Wh</div><div class="metric-lbl">Enerji tasarrufu</div></div>`;
+      <div class="metric" onmouseenter="showTooltip(event,'${v.co2Tip}')" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()" onclick="showTooltip(event,'${v.co2Tip}')">
+        <div class="metric-val">${v.co2}g</div><div class="metric-lbl">CO₂ tasarrufu</div><div class="metric-hint">ℹ tıkla</div>
+      </div>
+      <div class="metric" onmouseenter="showTooltip(event,'${v.suTip}')" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()" onclick="showTooltip(event,'${v.suTip}')">
+        <div class="metric-val">${v.su}L</div><div class="metric-lbl">Su tasarrufu</div><div class="metric-hint">ℹ tıkla</div>
+      </div>
+      <div class="metric" onmouseenter="showTooltip(event,'${v.enerjiTip}')" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()" onclick="showTooltip(event,'${v.enerjiTip}')">
+        <div class="metric-val">${v.enerji}Wh</div><div class="metric-lbl">Enerji tasarrufu</div><div class="metric-hint">ℹ tıkla</div>
+      </div>`;
     chatHistory = [{ role:'system', content:`Sen bir çevre ve geri dönüşüm danışmanısın. Kullanıcı "${result.nesne}" adlı nesnenin (${result.kategori} kategorisi) fotoğrafını yükledi. Geri dönüştürülebilir mi: ${result.geri_donusum}. Türkçe yanıt ver, samimi, pratik ve motive edici ol. Kısa tut.` }];
   } catch(err) {
     clearInterval(timer);
@@ -708,7 +729,7 @@ async function openProfile() {
   const rank = getRank(pts);
   const nextRank = getNextRank(pts);
   const progress = nextRank ? Math.min(((pts-rank.min)/(nextRank.min-rank.min))*100,100) : 100;
-  const photo = currentUser.user_metadata?.avatar_url;
+  const photo = currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture;
   document.getElementById('profile-body').innerHTML = `
     <div class="profile-section">
       <div class="profile-header">
@@ -792,6 +813,20 @@ function showToast(msg, isErr=false) {
   t._hide=setTimeout(()=>t.style.opacity='0',3500);
 }
 
+// ==================== TOOLTIP ====================
+const tooltipEl = document.getElementById('tooltip-box');
+function showTooltip(e, text) {
+  tooltipEl.textContent = text;
+  tooltipEl.classList.add('visible');
+  moveTooltip(e);
+}
+function moveTooltip(e) {
+  const x = e.clientX + 14, y = e.clientY + 14;
+  tooltipEl.style.left = (x + tooltipEl.offsetWidth > window.innerWidth ? e.clientX - tooltipEl.offsetWidth - 12 : x) + 'px';
+  tooltipEl.style.top = (y + tooltipEl.offsetHeight > window.innerHeight ? e.clientY - tooltipEl.offsetHeight - 12 : y) + 'px';
+}
+function hideTooltip() { tooltipEl.classList.remove('visible'); }
+
 // ==================== BG VIDEO ====================
 function startBgPlaylist() {
   const vids=['bg-video-1','bg-video-2','bg-video-3','bg-video-4'].map(id=>document.getElementById(id)).filter(Boolean);
@@ -799,6 +834,7 @@ function startBgPlaylist() {
   let idx=0;
   vids.forEach((v,k)=>v.addEventListener('ended',async()=>{ idx=(k+1)%vids.length; vids.forEach((x,j)=>x.classList.toggle('is-hidden',j!==idx)); try{vids[idx].currentTime=0;await vids[idx].play();}catch(_){} }));
   vids.forEach((v,k)=>v.classList.toggle('is-hidden',k!==0));
+  document.addEventListener('click', () => { vids[0].play().catch(()=>{}); }, { once: true });
   vids[0].play().catch(()=>{});
 }
 
