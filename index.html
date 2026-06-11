@@ -557,7 +557,7 @@ async function analyzeImage() {
     document.getElementById('loading-section').classList.add('hidden');
     document.getElementById('result-section').classList.remove('hidden');
     document.getElementById('res-object').textContent = result.nesne;
-    const isRecyclable = result.geri_donusum === 'evet' || result.geri_donusum === 'kismen';
+    const isRecyclable = result.geri_donusum === 'evet';
     const bc = result.geri_donusum==='evet'?'badge-green':result.geri_donusum==='kismen'?'badge-amber':'badge-red';
     const bt = result.kategori+' · '+(result.geri_donusum==='evet'?'Geri dönüştürülebilir ✓':result.geri_donusum==='kismen'?'Kısmen geri dönüştürülebilir':'Geri dönüştürülemiyor ✗');
     document.getElementById('res-badge').innerHTML=`<span class="badge ${bc}">${bt}</span>`;
