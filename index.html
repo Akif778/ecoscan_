@@ -289,12 +289,47 @@
           <div style="margin-top:6px" id="res-badge"></div>
         </div>
       </div>
-      <div class="info-box" style="margin-bottom:1rem">
-        <div class="info-label" style="margin-bottom:8px">Geri dönüştürürsen kurtarırsın</div>
-        <div class="metric-grid" id="metric-grid"></div>
+
+      <!-- GERİ DÖNÜŞTÜRÜLEBİLİR: metrikler -->
+      <div id="recyclable-section">
+        <div class="info-box" style="margin-bottom:1rem">
+          <div class="info-label" style="margin-bottom:8px">Geri dönüştürürsen kurtarırsın</div>
+          <div class="metric-grid" id="metric-grid"></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="goToChat()"><i class="ti ti-message-circle"></i> Danışmanla konuş</button>
+        </div>
       </div>
-      <div class="btn-row">
-        <button class="btn btn-primary" onclick="goToChat()"><i class="ti ti-message-circle"></i> Danışmanla konuş</button>
+
+      <!-- GERİ DÖNÜŞTÜRÜLEMEYEN: açıklama + öneri -->
+      <div id="nonrecyclable-section" class="hidden">
+        <!-- Neden geri dönüştürülemiyor? -->
+        <div class="info-box" style="margin-bottom:0.8rem;cursor:pointer;border:1px solid rgba(251,191,36,0.3);background:rgba(251,191,36,0.06);" onclick="toggleWhySection()">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="font-size:14px;font-weight:600;color:#fbbf24;">⚠️ Neden geri dönüştürülemiyor?</div>
+            <i class="ti ti-chevron-down" id="why-chevron" style="color:#fbbf24;font-size:16px;transition:transform 0.2s;"></i>
+          </div>
+          <div id="why-section" class="hidden" style="margin-top:10px;">
+            <div class="chat-messages" id="why-messages" style="max-height:180px;"></div>
+          </div>
+        </div>
+
+        <!-- Yine de ne yapabilirim? -->
+        <div class="info-box" style="margin-bottom:0.8rem;cursor:pointer;border:1px solid rgba(29,158,117,0.3);background:rgba(29,158,117,0.06);" onclick="toggleAlternativeSection()">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="font-size:14px;font-weight:600;color:var(--green);">💡 Yine de ne yapabilirim?</div>
+            <i class="ti ti-chevron-down" id="alt-chevron" style="color:var(--green);font-size:16px;transition:transform 0.2s;"></i>
+          </div>
+          <div id="alt-section" class="hidden" style="margin-top:10px;">
+            <div class="chat-messages" id="alt-messages" style="max-height:200px;"></div>
+          </div>
+        </div>
+
+        <!-- Kanıt yükle (yaptıysan) -->
+        <div class="info-box" style="margin-bottom:0.8rem;background:rgba(29,158,117,0.06);border:1px solid rgba(29,158,117,0.2);">
+          <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">Öneriyi uyguladıysan kanıt yükle ve <strong style="color:var(--green);">%5 bonus</strong> puan kazan!</div>
+          <button class="btn btn-primary" style="width:100%" onclick="goToProof()"><i class="ti ti-camera"></i> Kanıt yükle ve puan kazan</button>
+        </div>
       </div>
     </div>
   </div>
@@ -421,6 +456,8 @@ let proofMediaType = null;
 let detectedItem = null;
 let detectedCategory = null;
 let chatHistory = [];
+let whyLoaded = false;
+let altLoaded = false;
 
 // ==================== INIT ====================
 async function init() {
@@ -520,24 +557,88 @@ async function analyzeImage() {
     document.getElementById('loading-section').classList.add('hidden');
     document.getElementById('result-section').classList.remove('hidden');
     document.getElementById('res-object').textContent = result.nesne;
+    const isRecyclable = result.geri_donusum === 'evet' || result.geri_donusum === 'kismen';
     const bc = result.geri_donusum==='evet'?'badge-green':result.geri_donusum==='kismen'?'badge-amber':'badge-red';
     const bt = result.kategori+' · '+(result.geri_donusum==='evet'?'Geri dönüştürülebilir ✓':result.geri_donusum==='kismen'?'Kısmen geri dönüştürülebilir':'Geri dönüştürülemiyor ✗');
     document.getElementById('res-badge').innerHTML=`<span class="badge ${bc}">${bt}</span>`;
-    const v = ekoVeriler[result.kategori]||ekoVeriler['Diğer'];
-    document.getElementById('metric-grid').innerHTML=`
-      <div class="metric" onmouseenter="showTooltip(event,'${v.co2Tip}')" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()" onclick="showTooltip(event,'${v.co2Tip}')">
-        <div class="metric-val">${v.co2}g</div><div class="metric-lbl">CO₂ tasarrufu</div><div class="metric-hint">ℹ tıkla</div>
-      </div>
-      <div class="metric" onmouseenter="showTooltip(event,'${v.suTip}')" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()" onclick="showTooltip(event,'${v.suTip}')">
-        <div class="metric-val">${v.su}L</div><div class="metric-lbl">Su tasarrufu</div><div class="metric-hint">ℹ tıkla</div>
-      </div>
-      <div class="metric" onmouseenter="showTooltip(event,'${v.enerjiTip}')" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()" onclick="showTooltip(event,'${v.enerjiTip}')">
-        <div class="metric-val">${v.enerji}Wh</div><div class="metric-lbl">Enerji tasarrufu</div><div class="metric-hint">ℹ tıkla</div>
-      </div>`;
+
+    if (isRecyclable) {
+      document.getElementById('recyclable-section').classList.remove('hidden');
+      document.getElementById('nonrecyclable-section').classList.add('hidden');
+      const v = ekoVeriler[result.kategori]||ekoVeriler['Diğer'];
+      document.getElementById('metric-grid').innerHTML=`
+        <div class="metric" onmouseenter="showTooltip(event,'${v.co2Tip}')" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()" onclick="showTooltip(event,'${v.co2Tip}')">
+          <div class="metric-val">${v.co2}g</div><div class="metric-lbl">CO₂ tasarrufu</div><div class="metric-hint">ℹ tıkla</div>
+        </div>
+        <div class="metric" onmouseenter="showTooltip(event,'${v.suTip}')" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()" onclick="showTooltip(event,'${v.suTip}')">
+          <div class="metric-val">${v.su}L</div><div class="metric-lbl">Su tasarrufu</div><div class="metric-hint">ℹ tıkla</div>
+        </div>
+        <div class="metric" onmouseenter="showTooltip(event,'${v.enerjiTip}')" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()" onclick="showTooltip(event,'${v.enerjiTip}')">
+          <div class="metric-val">${v.enerji}Wh</div><div class="metric-lbl">Enerji tasarrufu</div><div class="metric-hint">ℹ tıkla</div>
+        </div>`;
+    } else {
+      document.getElementById('recyclable-section').classList.add('hidden');
+      document.getElementById('nonrecyclable-section').classList.remove('hidden');
+    }
+
     chatHistory = [{ role:'system', content:`Sen bir çevre ve geri dönüşüm danışmanısın. Kullanıcı "${result.nesne}" adlı nesnenin (${result.kategori} kategorisi) fotoğrafını yükledi. Geri dönüştürülebilir mi: ${result.geri_donusum}. Türkçe yanıt ver, samimi, pratik ve motive edici ol. Kısa tut.` }];
   } catch(err) {
     clearInterval(timer);
     document.getElementById('loading-section').innerHTML=`<p style="color:#f87171;font-size:13px;">Hata: ${err.message}</p>`;
+  }
+}
+
+// ==================== NEDEN GERİ DÖNÜŞTÜRÜLEMİYOR ====================
+let whyLoaded = false;
+async function toggleWhySection() {
+  const section = document.getElementById('why-section');
+  const chevron = document.getElementById('why-chevron');
+  const isOpen = !section.classList.contains('hidden');
+  section.classList.toggle('hidden', isOpen);
+  chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+  if (!isOpen && !whyLoaded) {
+    whyLoaded = true;
+    const msgs = document.getElementById('why-messages');
+    msgs.innerHTML = '<div class="msg msg-bot"><div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>';
+    try {
+      const resp = await fetch('/api/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+        model:'google/gemma-3-27b-it',
+        messages:[
+          ...chatHistory,
+          { role:'user', content:`"${detectedItem}" neden geri dönüştürülemiyor? 2-3 cümleyle açıkla.` }
+        ], max_tokens:150, temperature:0.2
+      })});
+      const data = await resp.json();
+      const txt = data.choices[0].message.content;
+      msgs.innerHTML = `<div class="msg msg-bot">${txt.replace(/\n/g,'<br>')}</div>`;
+    } catch(e) { msgs.innerHTML = `<div class="msg msg-bot">Açıklama alınamadı.</div>`; }
+  }
+}
+
+// ==================== YİNE DE NE YAPABİLİRİM ====================
+let altLoaded = false;
+async function toggleAlternativeSection() {
+  const section = document.getElementById('alt-section');
+  const chevron = document.getElementById('alt-chevron');
+  const isOpen = !section.classList.contains('hidden');
+  section.classList.toggle('hidden', isOpen);
+  chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+  if (!isOpen && !altLoaded) {
+    altLoaded = true;
+    const msgs = document.getElementById('alt-messages');
+    msgs.innerHTML = '<div class="msg msg-bot"><div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>';
+    try {
+      const resp = await fetch('/api/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+        model:'google/gemma-3-27b-it',
+        messages:[
+          ...chatHistory,
+          { role:'user', content:`"${detectedItem}" geri dönüştürülemiyor ama bundan alternatif bir şey yapabilir miyim? Yaratıcı ve pratik bir fikir öner, adımlarını kısaca açıkla. Motive edici ol.` }
+        ], max_tokens:250, temperature:0.5
+      })});
+      const data = await resp.json();
+      const txt = data.choices[0].message.content;
+      msgs.innerHTML = `<div class="msg msg-bot">${txt.replace(/\n/g,'<br>')}</div>`;
+    } catch(e) { msgs.innerHTML = `<div class="msg msg-bot">Öneri alınamadı.</div>`; }
   }
 }
 
@@ -643,8 +744,10 @@ async function verifyProof() {
     document.getElementById('verify-loading').classList.add('hidden');
 
     if (result.gecerli) {
-      // Puan hesapla
-      const earnedPts = POINT_VALUES[detectedCategory] || 10;
+      const basePoints = POINT_VALUES[detectedCategory] || 10;
+      // Geri dönüştürülemeyen ürünlerde %5 bonus (alternatif kullanım emeği)
+      const isNonRecyclable = document.getElementById('nonrecyclable-section') && !document.getElementById('nonrecyclable-section').classList.contains('hidden');
+      const earnedPts = isNonRecyclable ? Math.ceil(basePoints * 1.05) : basePoints;
       const oldPts = currentProfile.points || 0;
       const newPts = oldPts + earnedPts;
       const newScans = (currentProfile.total_scans || 0) + 1;
@@ -787,7 +890,14 @@ function setStep(n) {
 function resetApp() {
   uploadedImageBase64=null; uploadedMediaType=null; proofImageBase64=null; proofMediaType=null;
   detectedItem=null; detectedCategory=null; chatHistory=[];
+  whyLoaded=false; altLoaded=false;
   ['preview-wrap','panel-result','panel-chat','panel-proof','panel-points','verify-loading'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  document.getElementById('nonrecyclable-section').classList.add('hidden');
+  document.getElementById('recyclable-section').classList.remove('hidden');
+  document.getElementById('why-section').classList.add('hidden');
+  document.getElementById('alt-section').classList.add('hidden');
+  document.getElementById('why-chevron').style.transform = '';
+  document.getElementById('alt-chevron').style.transform = '';
   document.getElementById('upload-zone').classList.remove('hidden');
   document.getElementById('proof-zone').classList.remove('hidden');
   document.getElementById('proof-preview-wrap').classList.add('hidden');
