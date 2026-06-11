@@ -464,7 +464,8 @@ function updateHeaderUI() {
   } else {
     avatarEl.textContent = (currentProfile.username || '?')[0].toUpperCase();
   }
-  document.getElementById('header-name').textContent = currentProfile.username || currentUser.email;
+  const displayName = currentProfile.username || currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || currentUser.email?.split('@')[0] || 'Kullanıcı';
+document.getElementById('header-name').textContent = displayName;
 }
 
 // ==================== STEP 1: IMAGE UPLOAD ====================
